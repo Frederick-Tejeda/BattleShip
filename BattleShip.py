@@ -108,10 +108,11 @@
 # if __name__ == "__main__":
 #     main()
 
+import random
 import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, 
                                QHBoxLayout, QGridLayout, QLabel, QPushButton, 
-                               QSplitter, QStackedWidget)
+                               QSplitter, QStackedWidget, QSizePolicy)
 from PySide6.QtCore import Qt
 import random
 
@@ -125,6 +126,9 @@ class WarShipGame(QMainWindow):
         super().__init__()
         self.setWindowTitle("WarShip")
         self.setGeometry(100, 100, 1000, 800)
+        self.board_size = 5
+        self.shipsCount = 0
+        self.triesCount = int((self.board_size * self.board_size) * 0.8)
         
         # Apply the CSS style sheet directly in the code
         self.setStyleSheet("""
@@ -140,11 +144,13 @@ class WarShipGame(QMainWindow):
                 font-size: 32px;
                 font-weight: bold;
                 color: #1a202c;
+                margin: 0 0 15px 0;
             }
             QLabel#messageLabel {
-                font-size: 16px;
+                font-size: 22px;
                 font-style: italic;
                 color: #4a5568;
+                margin: 0 0 8px 0;
             }
             QPushButton {
                 background-color: #2b6cb0;
@@ -152,6 +158,7 @@ class WarShipGame(QMainWindow):
                 border-radius: 8px;
                 padding: 10px 20px;
                 font-weight: bold;
+                font-size: 18px;
             }
             QPushButton:hover {
                 background-color: #2c5282;
@@ -159,22 +166,37 @@ class WarShipGame(QMainWindow):
             QPushButton:pressed {
                 background-color: #1c456a;
             }
-            .board-button {
-                background-color: #63b3ed;
-                border: 1px solid #4299e1;
-                border-radius: 4px;
+         
+            QWidget#opponentBoardWidget, QWidget#playerBoardWidget {
+                background-color: #0A497B;
+                border: 2px solid #c0c0c0;
+                border-radius: 8px;
             }
-            .board-button[hit="true"] {
+
+            QLabel#opponentLabel, QLabel#playerLabel {
+                font-size: 20px;
+                font-weight: bold;
+                color: #2d3748;
+                margin: 0 0 10px 0;
+            }
+
+            .boardButton {
+                background-color: #0A497B;
+                border: 2px solid #ffffff;
+                border-radius: 4px;
+                margin: 0;
+            }
+            .boardButton[hit="true"] {
                 background-color: #e53e3e;
             }
-            .board-button[miss="true"] {
+            .boardButton[miss="true"] {
                 background-color: #a0aec0;
             }
-            .board-button[content="hit"] {
+            .boardButton[content="hit"] {
                 color: #fff;
                 font-weight: bold;
             }
-            .board-button[content="miss"] {
+            .boardButton[content="miss"] {
                 color: #fff;
                 font-weight: bold;
             }
@@ -254,6 +276,7 @@ class WarShipGame(QMainWindow):
         self.player_container = QWidget()
         self.player_layout = QVBoxLayout(self.player_container)
         self.player_label = QLabel("Your Fleet")
+        self.player_label.setObjectName("playerLabel")
         self.player_label.setAlignment(Qt.AlignCenter)
         self.player_layout.addWidget(self.player_label)
         self.player_board_widget = QWidget()
@@ -264,8 +287,10 @@ class WarShipGame(QMainWindow):
 
         # Opponent Board Container (main interactive board)
         self.opponent_container = QWidget()
+        self.opponent_container.setObjectName("opponentContainer")
         self.opponent_layout = QVBoxLayout(self.opponent_container)
         self.opponent_label = QLabel("Opponent's Waters")
+        self.opponent_label.setObjectName("opponentLabel")
         self.opponent_label.setAlignment(Qt.AlignCenter)
         self.opponent_layout.addWidget(self.opponent_label)
         self.opponent_board_widget = QWidget()
@@ -282,16 +307,19 @@ class WarShipGame(QMainWindow):
         Initializes the game state and displays the game view.
         """
         self.message_label.setText("¡Es tu turno! Haz clic en una casilla para disparar.")
-        self.board_size = 10
+        
         self.opponent_ships = self.place_ships(self.board_size)
         self.init_opponent_board(self.board_size)
+        self.player_container.hide() # Hide player board for solo mode
         self.stacked_widget.setCurrentIndex(2) # Switch to the game view
 
     def place_ships(self, board_size):
         """Randomly places a set of ships on the board."""
         # Simple ship placement for demonstration
+        #Ships minimun = TableSize/2, Ships maximun = TableSize
+        self.shipsCount = random.randint(int(self.board_size / 2), self.board_size)
         ships = set()
-        for _ in range(5):  # Placing 5 simple ships
+        for _ in range(self.shipsCount):
             row = random.randint(0, board_size - 1)
             col = random.randint(0, board_size - 1)
             ships.add((row, col))
@@ -301,11 +329,13 @@ class WarShipGame(QMainWindow):
         """Initializes the opponent's board with interactive buttons."""
         for row in range(board_size):
             for col in range(board_size):
-                button = QPushButton("~")
-                button.setObjectName("board-button")
+                button = QPushButton(" ")
+                button.setObjectName("boardButton")
                 button.setProperty("row", row)
                 button.setProperty("col", col)
-                button.setFixedSize(40, 40)
+                size_policy = QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+                button.setSizePolicy(size_policy)
+                #button.setFixedSize(40, 40)
                 button.clicked.connect(self.on_opponent_cell_clicked)
                 self.opponent_board_layout.addWidget(button, row, col)
 
@@ -318,6 +348,8 @@ class WarShipGame(QMainWindow):
         if button.property("state") in ("hit", "miss"):
             self.message_label.setText("¡Ya disparaste a esta casilla! Intenta de nuevo.")
             return
+        
+        self.triesCount -= 1
 
         if (row, col) in self.opponent_ships:
             self.message_label.setText("¡Es un impacto!")
@@ -325,12 +357,22 @@ class WarShipGame(QMainWindow):
             button.setStyleSheet("background-color: red;")
             button.setProperty("state", "hit")
             button.setProperty("content", "hit")
+            self.shipsCount -= 1
+            if self.shipsCount == 0:
+                self.message_label.setText("¡Felicidades! ¡Has hundido todos los barcos!")
         else:
-            self.message_label.setText("¡Fallaste!")
+            self.message_label.setText(f"¡Fallaste, te quedan {self.triesCount} intentos!")
             button.setText("X") # Miss
             button.setStyleSheet("background-color: grey;")
             button.setProperty("state", "miss")
             button.setProperty("content", "miss")
+
+        if self.triesCount <= 0 and self.shipsCount > 0:
+            self.message_label.setText("¡Juego terminado! No te quedan más intentos.")
+            # Disable all buttons
+            for i in range(self.opponent_board_layout.count()):
+                btn = self.opponent_board_layout.itemAt(i).widget()
+                btn.setEnabled(False)
         
         button.setEnabled(False) # Disable button after click
 

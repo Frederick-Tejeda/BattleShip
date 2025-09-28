@@ -126,9 +126,9 @@ class WarShipGame(QMainWindow):
         super().__init__()
         self.setWindowTitle("WarShip")
         self.setGeometry(100, 100, 1000, 800)
-        self.board_size = 5
-        self.shipsCount = 0
-        self.triesCount = int((self.board_size * self.board_size) * 0.8)
+        self.board_size = 10
+        self.shipsPartsCount = 20
+        self.triesCount = 100
         
         # Apply the CSS style sheet directly in the code
         self.setStyleSheet("""
@@ -220,7 +220,7 @@ class WarShipGame(QMainWindow):
         title_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(title_label)
         
-        description_label = QLabel("Welcome to the classic battleship game.\nDestroy all the ships on the opponent's board to win!")
+        description_label = QLabel("Bienvenido al juego clasico de battleship. \n¡Destruye todos los barcos del tablero enemigo para ganar!")
         description_label.setObjectName("messageLabel")
         description_label.setAlignment(Qt.AlignCenter)
         layout.addWidget(description_label)
@@ -257,7 +257,7 @@ class WarShipGame(QMainWindow):
         self.main_layout = QVBoxLayout(self.game_widget)
 
         # Title and message labels
-        self.title_label = QLabel("WarShip")
+        self.title_label = QLabel("BattleShip")
         self.title_label.setObjectName("titleLabel")
         self.title_label.setAlignment(Qt.AlignCenter)
         self.main_layout.addWidget(self.title_label)
@@ -275,7 +275,7 @@ class WarShipGame(QMainWindow):
         # Player Board Container (not interactive in this example)
         self.player_container = QWidget()
         self.player_layout = QVBoxLayout(self.player_container)
-        self.player_label = QLabel("Your Fleet")
+        self.player_label = QLabel("Tu Tablero")
         self.player_label.setObjectName("playerLabel")
         self.player_label.setAlignment(Qt.AlignCenter)
         self.player_layout.addWidget(self.player_label)
@@ -289,7 +289,7 @@ class WarShipGame(QMainWindow):
         self.opponent_container = QWidget()
         self.opponent_container.setObjectName("opponentContainer")
         self.opponent_layout = QVBoxLayout(self.opponent_container)
-        self.opponent_label = QLabel("Opponent's Waters")
+        self.opponent_label = QLabel("Tablero Enemigo")
         self.opponent_label.setObjectName("opponentLabel")
         self.opponent_label.setAlignment(Qt.AlignCenter)
         self.opponent_layout.addWidget(self.opponent_label)
@@ -317,9 +317,8 @@ class WarShipGame(QMainWindow):
         """Randomly places a set of ships on the board."""
         # Simple ship placement for demonstration
         #Ships minimun = TableSize/2, Ships maximun = TableSize
-        self.shipsCount = random.randint(int(self.board_size / 2), self.board_size)
         ships = set()
-        for _ in range(self.shipsCount):
+        for _ in range(21):
             row = random.randint(0, board_size - 1)
             col = random.randint(0, board_size - 1)
             ships.add((row, col))
@@ -357,22 +356,18 @@ class WarShipGame(QMainWindow):
             button.setStyleSheet("background-color: red;")
             button.setProperty("state", "hit")
             button.setProperty("content", "hit")
-            self.shipsCount -= 1
-            if self.shipsCount == 0:
+            self.shipsPartsCount -= 1
+            if self.shipsPartsCount == 0:
                 self.message_label.setText("¡Felicidades! ¡Has hundido todos los barcos!")
         else:
-            self.message_label.setText(f"¡Fallaste, te quedan {self.triesCount} intentos!")
+            self.message_label.setText(f"¡Fallaste, todavia quedan {self.shipsPartsCount} partes de barco!")
             button.setText("X") # Miss
             button.setStyleSheet("background-color: grey;")
             button.setProperty("state", "miss")
             button.setProperty("content", "miss")
 
-        if self.triesCount <= 0 and self.shipsCount > 0:
-            self.message_label.setText("¡Juego terminado! No te quedan más intentos.")
-            # Disable all buttons
-            for i in range(self.opponent_board_layout.count()):
-                btn = self.opponent_board_layout.itemAt(i).widget()
-                btn.setEnabled(False)
+        if self.triesCount == 0:
+            self.message_label.setText("¡Juego terminado!")
         
         button.setEnabled(False) # Disable button after click
 

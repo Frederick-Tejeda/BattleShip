@@ -1,31 +1,31 @@
 import random
+from Entidad.tablero_datos import TableroDatos 
 
 class Tablero:
     """Clase que representa el estado del tablero y los barcos."""
     
     def __init__(self, size=10):
-        self.size = size
-        # Las coordenadas de los barcos se guardan en un conjunto para búsquedas rápidas.
-        self.ships = self._place_ships_randomly()
-        self.total_parts = len(self.ships)
+        self.filas = size
+        self.columnas = size
+        
+        # Matriz para la representación visual/interna: 
+        # '.' = Agua, '*' = Barco (sin tocar)
+        self.matriz = [['.' for _ in range(self.columnas)] for _ in range(self.filas)]
+        
+        # Las coordenadas de los barcos se guardan en un conjunto para búsquedas rápidas (row, col).
+        self.ships = set()
+        
+        self.total_parts = 0 # Se actualizará después de la colocación por TableroDatos
         self.parts_hit = 0
         self.total_tries = 100 # Número máximo de intentos
-        self.plays = set() # Para rastrear las jugadas realizadas
-        self.are_hints_shown = False # Para rastrear si las pistas están activadas
+        self.plays = set()
+        self.are_hints_shown = False 
 
-    def _place_ships_randomly(self):
-        """Genera y coloca las partes de los barcos aleatoriamente."""
-        ships = set()
-        # Colocamos un número fijo de partes de barco (ejemplo: 20 partes)
-        # Esto simula tener varios barcos de diferentes tamaños.
-        while len(ships) < 20: 
-            row = random.randint(0, self.size - 1)
-            col = random.randint(0, self.size - 1)
-            ships.add((row, col))
-        return ships
+        # Llama a la lógica de colocación de barcos de la capa de Datos
+        TableroDatos.generar_barcos(self)
 
     def is_ship_at(self, row, col):
-        """Verifica si hay un barco en la coordenada dada."""
+        """Verifica si hay un barco en la coordenada dada usando el set de coordenadas."""
         return (row, col) in self.ships
 
     def register_hit(self):

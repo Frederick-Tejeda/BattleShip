@@ -7,76 +7,69 @@ class TableroDatos:
     """
     
     @staticmethod
-    def colocar_barco(tablero, tamano):
+    def _es_posicion_valida_con_margen(tablero, r_start, c_start, tam, orient):
         """
-        Coloca un barco de 'tamano' en el tablero de forma aleatoria (horizontal o vertical).
-        Usa '*' para marcar las partes de barco en tablero.matriz.
+        Método auxiliar: Verifica si la colocación de un barco es válida,
+        incluyendo la verificación de la zona de amortiguamiento (margen)
+        alrededor del barco.
         """
         filas = tablero.filas
         columnas = tablero.columnas
-        colocado = False
-        intentos = 0
+
+        if orient == "H":
+            # Verificar que el barco no se salga del tablero
+            if c_start + tam > columnas: return False 
+            
+            # Rangos a revisar (incluyendo margen de 1 celda)
+            r_min, r_max = max(0, r_start - 1), min(filas, r_start + 2)
+            c_min, c_max = max(0, c_start - 1), min(columnas, c_start + tam + 1)
+        else: # Vertical
+            # Verificar que el barco no se salga del tablero
+            if r_start + tam > filas: return False
+            
+            # Rangos a revisar (incluyendo margen de 1 celda)
+            r_min, r_max = max(0, r_start - 1), min(filas, r_start + tam + 1)
+            c_min, c_max = max(0, c_start - 1), min(columnas, c_start + 2)
+
+        # Revisar si hay un barco ('*') en la zona de margen/colocación
+        for r in range(r_min, r_max):
+            for c in range(c_min, c_max):
+                if tablero.matriz[r][c] == '*':
+                    return False
         
-        def es_posicion_valida_con_margen(r, c, tam, orient):
-            """
-            Verifica si una posición inicial (r, c) de un barco de 'tam' es válida.
-            Incluye la verificación de la zona de amortiguamiento (margen) alrededor del barco.
-            """
-            if orient == "H":
-                # Rango de filas a revisar: r-1 hasta r+1 (incluido)
-                # Rango de columnas a revisar: c-1 hasta c+tam (incluido)
-                r_start, r_end = max(0, r - 1), min(filas, r + 2)
-                c_start, c_end = max(0, c - 1), min(columnas, c + tam + 1)
-            else: # Vertical
-                # Rango de filas a revisar: r-1 hasta r+tam (incluido)
-                # Rango de columnas a revisar: c-1 hasta c+1 (incluido)
-                r_start, r_end = max(0, r - 1), min(filas, r + tam + 1)
-                c_start, c_end = max(0, c - 1), min(columnas, c + 2)
-
-            for i in range(r_start, r_end):
-                for j in range(c_start, c_end):
-                    if tablero.matriz[i][j] == '*':
-                        return False # Hay otro barco demasiado cerca
-            
-            return True # No hay barcos cercanos, la posición es válida
-
-        # Intentamos colocar el barco
-        while not colocado and intentos < 1000:
-            intentos += 1
-            orientacion = random.choice(["H", "V"])  # Horizontal o Vertical
-            
-            if orientacion == "H":
-                # Intenta colocar horizontalmente
-                fila = random.randint(0, filas - 1)
-                col = random.randint(0, columnas - tamano)
-                
-                # 1. Verificar si la posición es válida (no toca a otros barcos)
-                if es_posicion_valida_con_margen(fila, col, tamano, "H"):
-                    # 2. Si es válida con margen, procedemos a colocar
-                    for i in range(tamano):
-                        tablero.matriz[fila][col + i] = "*"
-                        tablero.ships.add((fila, col + i)) # Añadir al set de coordenadas
-                    colocado = True
-            
-            else:  # Vertical
-                # Intenta colocar verticalmente
-                fila = random.randint(0, filas - tamano)
-                col = random.randint(0, columnas - 1)
-                
-                # 1. Verificar si la posición es válida (no toca a otros barcos)
-                if es_posicion_valida_con_margen(fila, col, tamano, "V"):
-                    # 2. Si es válida con margen, procedemos a colocar
-                    for i in range(tamano):
-                        tablero.matriz[fila + i][col] = "*"
-                        tablero.ships.add((fila + i, col)) # Añadir al set de coordenadas
-                    colocado = True
-
-        if not colocado:
-            # Esta advertencia es más común ahora, ya que las restricciones son mayores
-            print(f"Advertencia: No se pudo colocar un barco de tamaño {tamano} después de {intentos} intentos. Se reinicia la colocación.")
-            # Es mejor levantar una excepción o forzar un reinicio completo si fallan muchos intentos
-            return False
         return True
+    
+    @staticmethod
+    def colocar_barco(tablero, tamano):
+        """
+        Coloca un barco de 'tamano' en el tablero de forma aleatoria (horizontal o vertical).
+        """
+        filas = tablero.filas
+        columnas = tablero.columnas
+        orientaciones = ['H', 'V']
+        random.shuffle(orientaciones)
+        max_intentos = 100
+
+        for orient in orientaciones:
+            intentos = 0
+            while intentos < max_intentos:
+                r_start = random.randrange(filas)
+                c_start = random.randrange(columnas)
+                
+                if TableroDatos._es_posicion_valida_con_margen(tablero, r_start, c_start, tamano, orient):
+                    # Colocar el barco
+                    for i in range(tamano):
+                        if orient == "H":
+                            tablero.matriz[r_start][c_start + i] = '*'
+                            tablero.ships.add((r_start, c_start + i))
+                        else: # Vertical
+                            tablero.matriz[r_start + i][c_start] = '*'
+                            tablero.ships.add((r_start + i, c_start))
+                    return True # Colocación exitosa
+
+                intentos += 1
+        
+        return False # Falló la colocación después de intentar ambas orientaciones
 
     @staticmethod
     def generar_barcos(tablero):
@@ -84,15 +77,14 @@ class TableroDatos:
         Coloca todos los barcos en el tablero según las reglas estándar de BattleShip:
         1 x 4, 2 x 3, 3 x 2, 4 x 1 (Total: 20 partes).
         """
-        # Tamaños de los barcos a colocar
+        # Tamaños de los barcos a colocar: 1x4, 2x3, 3x2, 4x1 (Total 10 barcos, 20 partes)
         barcos = [4] + [3, 3] + [2, 2, 2] + [1, 1, 1, 1]  
         
-        # Implementar un bucle de reintento para garantizar que todos los barcos se coloquen
         max_attempts = 10
         attempt = 0
         
         while attempt < max_attempts:
-            # Resetear el tablero antes de cada intento
+            # Resetear el estado de los barcos antes de cada intento
             tablero.matriz = [['.' for _ in range(tablero.columnas)] for _ in range(tablero.filas)]
             tablero.ships = set()
             all_placed = True
@@ -112,5 +104,3 @@ class TableroDatos:
         
         # Si llega aquí, significa que falló después de todos los intentos
         print("ERROR FATAL: No se pudo generar un tablero válido después de múltiples intentos.")
-        # Establecer un valor por defecto o lanzar un error
-        tablero.total_parts = 0

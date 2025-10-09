@@ -1,4 +1,3 @@
-import random
 from Entidad.tablero_datos import TableroDatos 
 
 class Tablero:

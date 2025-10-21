@@ -1,40 +1,43 @@
-# Presentacion/presentacion.py
 import sys
 from PySide6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout,
                                QHBoxLayout, QGridLayout, QLabel, QPushButton,
                                QSplitter, QStackedWidget, QSizePolicy)
 from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QIcon
-from Controlador.controlador import WarShipController # Asegúrate de que esta ruta sea correcta
+from Controlador.controlador import WarShipController 
 
 class WarShipGame(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("BattleShip")
         self.setGeometry(100, 100, 1000, 800)
-        
-        # Agregar ícono a la ventana
-        # NOTA: Cambia "Portrait WarShip.png" por la ruta correcta o asegúrate de que esté en el directorio de ejecución.
-        self.setWindowIcon(QIcon("Portrait WarShip.png")) 
 
+        # Crear instancia del controlador con tablero de 10x10
         self.controller = WarShipController(board_size=10)
+        # Configurar los estilos CSS de la interfaz
         self.setup_styles()
 
+        # Crear widget apilado para cambiar entre diferentes vistas
         self.stacked_widget = QStackedWidget()
+        # Establecer el widget apilado como contenido central de la ventana
         self.setCentralWidget(self.stacked_widget)
 
-        # Estado UI persistente: ("game"|"t1"|"t2", row, col) -> "hit"|"miss"|"win"
+        # Diccionario para almacenar estados persistentes de las casillas del tablero
+        # Formato: ("game"|"t1"|"t2", row, col) -> "hit"|"miss"|"win"
         self.ui_states = {}
 
-        # Último movimiento: tuple (board_id, row, col, actor)
+        # Variable para guardar el último movimiento realizado
+        # Formato: tuple (board_id, row, col, actor)
+        # board_id puede ser: "game", "t1", "t2"
+        # actor puede ser: "human", "machine", "A", "B"
         self.last_move = None
         
-        # Estado HvH
+        # Estado HvH(
         self.is_hvh_switching = False # Bloquea clics durante la transición de turno
         self.current_visible_board = 1
         self.mode = 'solo'
         
-        # AI Timer (si se usan otros modos)
+        # AI Timer
         self.ai_timer = QTimer(self)
         self.ai_timer_interval_ms_default = 500
         self.ai_timer_interval_ms = self.ai_timer_interval_ms_default
@@ -44,9 +47,10 @@ class WarShipGame(QMainWindow):
         self.ai_paused = False
         self.ai_speed_up = False
 
-        self.create_home_view()
-        self.create_mode_selection_view()
-        self.create_game_view()
+        # Crear las tres vistas principales del juego
+        self.create_home_view() # Vista de inicio
+        self.create_mode_selection_view() # Vista de selección de modo
+        self.create_game_view() # Vista de juego
         
     def setup_styles(self):
         self.setStyleSheet("""
@@ -101,8 +105,11 @@ class WarShipGame(QMainWindow):
         """)
 
     def create_home_view(self):
+        # Crear widget contenedor para la vista home
         home_widget = QWidget()
+        # Crear layout para organizar los elementos
         layout = QVBoxLayout(home_widget)
+        # Alinear elementos al centro
         layout.setAlignment(Qt.AlignCenter)
         
         title_label = QLabel("BattleShip")
@@ -153,16 +160,14 @@ class WarShipGame(QMainWindow):
         self.stacked_widget.addWidget(mode_widget)
 
     def create_game_view(self):
-        # AQUI COMIENZA LA DEFINICIÓN DE LA FUNCIÓN
+        # Funcion principal
         self.game_widget = QWidget()
         self.main_layout = QVBoxLayout(self.game_widget)
 
-        # --------------------------------
-        # 1. Barra superior con información
-        # --------------------------------
+        # Barra superior con información
         info_bar = QHBoxLayout()
         
-        # INICIALIZACIÓN DE ETIQUETAS (CORRECCIÓN CLAVE)
+        # Inicializacion de etiquetas
         self.mode_label = QLabel("Modo: -")
         self.opponent_label = QLabel("Tablero: -")
         self.turn_label = QLabel("Turno: -")
@@ -175,18 +180,14 @@ class WarShipGame(QMainWindow):
         
         self.main_layout.addLayout(info_bar)
 
-        # --------------------------------
-        # 2. Area de Mensajes (CORRECCIÓN CLAVE)
-        # --------------------------------
+        # Area de Mensajes
         self.message_label = QLabel("Mensaje del sistema.")
         self.message_label.setAlignment(Qt.AlignCenter)
-        # Aplicamos el estilo para que se vea bien
+        # Aplicamos el estilo
         self.message_label.setStyleSheet("QLabel { padding: 10px; font-size: 18px; font-weight: bold; background-color: #2d3748; border-radius: 6px; }")
         self.main_layout.addWidget(self.message_label) 
-
-        # --------------------------------
-        # 3. Panel de tableros
-        # --------------------------------
+        
+        # Panel de tableros
         self.board_panel = QWidget()
         self.board_panel_layout = QHBoxLayout(self.board_panel)
         self.main_layout.addWidget(self.board_panel)
@@ -202,9 +203,7 @@ class WarShipGame(QMainWindow):
         self.btn_toggle_view.setObjectName("btn_toggle_view")
         self.btn_toggle_view.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         
-        # --------------------------------
-        # 4. Botones de control
-        # --------------------------------
+        # Botones de control
         controls_layout = QHBoxLayout()
 
         self.btn_back_to_mode = QPushButton("Cambiar Modo")
@@ -249,13 +248,8 @@ class WarShipGame(QMainWindow):
 
         self.main_layout.addLayout(controls_layout)
         self.stacked_widget.addWidget(self.game_widget)
-            # AQUÍ TERMINA LA DEFINICIÓN DE LA FUNCIÓN
-        
-    # ... (Otros métodos como start_solo_game, on_opponent_cell_clicked, etc.) ...
-    # ------------------------------------
-    # Métodos de Inicio de Juego
-    # ------------------------------------
 
+    # Métodos de Inicio de Juego
     def start_solo_game(self):
         self.ai_timer.stop()
         self.mode = 'solo'
@@ -268,7 +262,7 @@ class WarShipGame(QMainWindow):
         self.reset_board_buttons_ui()
         self.show_board(1) 
 
-        # OCULTAR TODOS LOS BOTONES NO NECESARIOS
+        # Ocultar los botones que no son necesario
         self.btn_pause_resume.hide()
         self.btn_speed.hide()
         self.btn_restart.hide()
@@ -276,8 +270,8 @@ class WarShipGame(QMainWindow):
         self.btn_toggle_ai_boards.hide()
         self.btn_end_turn.hide()
 
-        # MOSTRAR BOTONES NECESARIOS
-        self.btn_show_ships.show() # <-- Este botón debe estar visible
+        # Mostrar botones necesarios
+        self.btn_show_ships.show()
         
         # Resetear estado de hints
         self.btn_show_ships.setText("Mostrar Barcos")
@@ -323,20 +317,17 @@ class WarShipGame(QMainWindow):
         self.ai_paused = False
         self.ai_timer.start(self.ai_timer_interval_ms)
 
-    # ------------------------------------
-    # INICIO Y LÓGICA HvH 
-    # ------------------------------------
+    # Inicio y Logica - HvH
     def start_hvh_game(self):
         self.ai_timer.stop()
         self.mode = 'hvh'
-        # ... (Otros inicializadores) ...
         self.current_visible_board = 2 # P1 atacará T2
         self.controller.start_hvh_game() # Asume que esto inicializa tableros y self.controller.current_turn = 'P1'
         
         self.recreate_board_grid(self.controller.get_board_size())
         self.reset_board_buttons_ui()
         
-        # Muestra el tablero T2, pero con los barcos ocultos (fase de transición)
+        # Muestra el tablero T2, pero con los barcos ocultos
         self.show_board(2, hvh_reveal_ships=False) 
 
         self.mode_label.setText("Modo: Humano vs Humano")
@@ -352,12 +343,10 @@ class WarShipGame(QMainWindow):
         self.btn_toggle_view.hide()
         self.btn_toggle_ai_boards.hide()
         self.btn_show_ships.hide()
-        
-        # ------------------------------------------------
-        # CORRECCIÓN CLAVE: Mostrar el botón de Comenzar
-        # ------------------------------------------------
+    
+        # Mostrar el botón de Comenzar
         self.btn_end_turn.setText("Comenzar")
-        self.btn_end_turn.show() # <-- ¡DEBE ESTAR VISIBLE!
+        self.btn_end_turn.show()
 
         # Desconectar cualquier señal anterior y conectar la acción de inicio
         try:
@@ -395,15 +384,15 @@ class WarShipGame(QMainWindow):
         self.stacked_widget.setCurrentIndex(2)
 
         # Configuración de botones
-        self.btn_pause_resume.show()
-        self.btn_pause_resume.setText("Pausar IA")
+        # self.btn_pause_resume.show()
+        # self.btn_pause_resume.setText("Pausar IA")
         self.btn_speed.show()
         self.btn_restart.hide()
         self.btn_toggle_view.show() # Permite ver tu tablero (T1)
         self.btn_toggle_ai_boards.hide()
         self.btn_end_turn.hide()
         
-        self.btn_show_ships.show() # <-- Mostrar para ver TU tablero T1
+        self.btn_show_ships.show()
         if self.controller.tablero1:
             self.controller.tablero1.are_hints_shown = False # Resetear estado inicial
 
@@ -463,9 +452,7 @@ class WarShipGame(QMainWindow):
         self.opponent_label.setText(f"{target_board} (Ataca **{self.controller.current_turn}**)")
         self.message_label.setText(f"Turno de **{self.controller.current_turn}**: ¡Dispara al {target_board}!")
 
-    # ------------------------------------
     # Lógica de Clics y Turnos
-    # ------------------------------------
     def on_board_cell_clicked(self):
         button = self.sender()
         row, col = button.property("row"), button.property("col")
@@ -478,7 +465,6 @@ class WarShipGame(QMainWindow):
             return
         if button.property("state") in ("hit", "miss", "win"): return
 
-        # --- Humano vs Humano ---
         if self.mode == 'hvh':
             
             if self.controller.current_turn == 'P1':
@@ -505,9 +491,7 @@ class WarShipGame(QMainWindow):
             full_msg = f"Turno de **{actor}**. Disparo en {coord}: {message}"
             self.message_label.setText(full_msg)
 
-            # ----------------------------------------------------
-            # CORRECCIÓN CLAVE: Usar el método de estilización unificado
-            # ----------------------------------------------------
+            # Usar el método de estilización unificado
             state_result = "hit"
             if result == "win":
                 state_result = "win"
@@ -515,21 +499,19 @@ class WarShipGame(QMainWindow):
                 state_result = "miss"
             
             self.ui_states[(board_id, row, col)] = state_result
-            self._update_button_style(button, state_result) # <-- Usa la función helper
-            # ----------------------------------------------------
+            self._update_button_style(button, state_result)
 
             # Chequear fin de juego
             if self.controller.is_game_finished():
                 self.end_game_ui()
                 return
             
-            # CAMBIO DE TURNO AUTOMÁTICO después de 1 disparo.
-            # Ocultamos el botón "Finalizar Turno" (que ahora es "Continuar" para la transición)
+            # Cambio de turno tras el primer disparo
             self.btn_end_turn.hide() 
             self.toggle_player_turn_hvh()
             return
 
-        # --- Modo Solo / Hv (Lógica existente) ---
+        # Modo Solo
         if self.mode == 'solo':
             result, message = self.controller.process_shot_on(self.controller.get_game_model(), row, col)
             
@@ -584,9 +566,7 @@ class WarShipGame(QMainWindow):
                 self.ai_timer.start(self.ai_timer_interval_ms)
             return
 
-    # ------------------------------------
-    # AI/Helper Methods (MODIFICADO: start_again_wrapper)
-    # ------------------------------------
+    # AI/Helper Methods
 
     def on_show_ships_clicked(self):
         """Alterna la visualización de barcos en el tablero visible actualmente."""
@@ -611,7 +591,6 @@ class WarShipGame(QMainWindow):
             return 
 
         # 2. Llama al controlador para cambiar el estado del modelo
-        # (Esto invierte el valor de tablero.are_hints_shown)
         is_shown = self.controller.toggle_hints(board_id_key)
         
         # 3. Actualizar el texto del botón
@@ -634,7 +613,7 @@ class WarShipGame(QMainWindow):
         elif self.mode == 'hvh':
             self.start_hvh_game()
         else:
-            self.back_to_mode_selection() # Caso de respaldo
+            self.back_to_mode_selection() 
 
     def back_to_mode_selection(self):
         self.ai_timer.stop()
@@ -733,9 +712,7 @@ class WarShipGame(QMainWindow):
         if self.ai_paused:
             return
 
-        # ----------------------------------------------------
-        # 1. DETERMINAR ATACANTE Y OBJETIVO
-        # ----------------------------------------------------
+        # Determinar atacante y objetivo
         board_to_attack = None
         ai_state = None
         current_actor = ""
@@ -770,10 +747,7 @@ class WarShipGame(QMainWindow):
             self.ai_running = False
             return 
 
-        # ----------------------------------------------------
-        # 2. EJECUTAR EL MOVIMIENTO
-        # ----------------------------------------------------
-        
+        # Ejecutar el movimiento        
         result_tuple = self.controller.ai_make_move_on(board_to_attack, ai_state)
         row, col, result, message = result_tuple
 
@@ -784,26 +758,21 @@ class WarShipGame(QMainWindow):
             full_msg = f"Turno {current_actor}. Disparo en {coord}: {message}"
             self.message_label.setText(full_msg)
 
-            # 3. ACTUALIZAR LA INTERFAZ
+            # Actualizar la interfaz
             button = self.get_button_by_coords(board_id, row, col)
             
             # Solo actualiza la UI si estamos viendo el tablero atacado
             if self.current_visible_board == board_id:
-                # Nota: Asumimos que tienes el método _update_button_style(button, result)
                 self._update_button_style(button, result)
         
-        # ----------------------------------------------------
-        # 4. CHEQUEAR FIN DE JUEGO
-        # ----------------------------------------------------
+        # Chequear fin del juego
         if self.controller.is_game_finished():
             self.ai_timer.stop()
             self.ai_running = False
             self.end_game_ui()
             return
         
-        # ----------------------------------------------------
-        # 5. CAMBIO DE TURNO Y CONTROL DE FLUJO
-        # ----------------------------------------------------
+        # 5. Cambio de turno y Control de flujo
         self.ai_timer.stop() # Siempre detenemos el timer después de un disparo único
         self.controller.current_turn = next_turn
         
@@ -822,8 +791,6 @@ class WarShipGame(QMainWindow):
             self.ai_timer.start(self.ai_timer_interval_ms) 
             self.ai_running = True
 
-    # ----------------------------------------------------
-
     def determine_winner_text(self):
         if self.mode == 'solo':
             if self.controller.get_game_model() and self.controller.get_game_model().is_game_over():
@@ -831,15 +798,15 @@ class WarShipGame(QMainWindow):
             return None
         elif self.mode == 'hv':
             if self.controller.tablero1 and self.controller.tablero1.is_game_over():
-                return "Humano"
-            if self.controller.tablero2 and self.controller.tablero2.is_game_over():
                 return "Máquina"
+            if self.controller.tablero2 and self.controller.tablero2.is_game_over():
+                return "Humano"
             return None
         elif self.mode == 'mm':
             if self.controller.tablero1 and self.controller.tablero1.is_game_over():
-                return "Máquina B"
-            if self.controller.tablero2 and self.controller.tablero2.is_game_over():
                 return "Máquina A"
+            if self.controller.tablero2 and self.controller.tablero2.is_game_over():
+                return "Máquina B"
             return None
         elif self.mode == 'hvh':
             if self.controller.tablero1 and self.controller.tablero1.is_game_over():
@@ -881,8 +848,8 @@ class WarShipGame(QMainWindow):
         self.btn_restart.show()
         # btn_back_to_mode (Cambiar Modo) está visible por defecto en el layout
         self.btn_speed.hide()
-        self.btn_toggle_view.hide()
-        self.btn_toggle_ai_boards.hide()
+        # self.btn_toggle_view.hide()
+        # self.btn_toggle_ai_boards.hide()
 
         try: self.btn_restart.clicked.disconnect()
         except TypeError: pass
@@ -899,12 +866,9 @@ class WarShipGame(QMainWindow):
             # Si el modo no está reconocido, simplemente llevar a la selección de modo
             self.btn_restart.clicked.connect(lambda: self.stacked_widget.setCurrentIndex(1))
 
-    # ------------------------------------
     # UI Helpers
-    # ------------------------------------
     def show_board(self, board_id, hvh_reveal_ships=False): 
         
-        # ... (código para determinar tablero_obj y board_id_key) ...
         if board_id == 1:
             tablero_obj = self.controller.tablero1 if self.mode != 'solo' else self.controller.get_game_model()
             board_id_key = "t1" if self.mode != 'solo' else "game"
@@ -915,10 +879,7 @@ class WarShipGame(QMainWindow):
         self.current_visible_board = board_id
 
         if tablero_obj is None: return
-
-        # -----------------------------------------------------------
-        # Lógica de Visibilidad de Barcos (Corrección Clave)
-        # -----------------------------------------------------------
+        # Lógica de Visibilidad de Barcos
         if self.mode == 'hvh':
             # En HvH, ocultar barcos SI es un tablero enemigo (implícito) Y NO estamos en fase de revelación
             hide_ships = not hvh_reveal_ships 
@@ -956,21 +917,21 @@ class WarShipGame(QMainWindow):
 
                 key = (board_id, row, col)
                 
-                # 1. ESTADO PERSISTENTE (hit/miss/win ya aplicado)
+                # 1. Estado persistente (hit/miss/win ya aplicado)
                 if key in self.ui_states:
                     self._update_button_style(button, self.ui_states[key])
                     continue
                 
-                # 2. ESTADO EN EL MODELO (Barco golpeado o fallado) - Esto tiene prioridad
+                # 2. Estado ideal (Barco golpeado o fallado) - Esto tiene prioridad
                 if (row, col) in tablero.plays:
                     if tablero.is_ship_at(row, col):
                         self._update_button_style(button, "hit")
                     else:
                         self._update_button_style(button, "miss")
-                # 3. BARCOS NO GOLPEADOS (Ahora usa should_show_ships)
+                # 3. Barcos no golpeados (Ahora usa should_show_ships)
                 elif should_show_ships and tablero.is_ship_at(row, col):
                     self._update_button_style(button, "ship")
-                # 4. AGUA (Por defecto)
+                # 4. Agua(Esta base)
                 else:
                     self._update_button_style(button, None)
 
@@ -978,9 +939,7 @@ class WarShipGame(QMainWindow):
         # Aquí aseguramos que el texto esté correcto si ya está visible:
         if self.btn_show_ships.isVisible():
             self.btn_show_ships.setText("Ocultar Barcos" if tablero and tablero.are_hints_shown else "Mostrar Barcos")
-# En Presentacion/presentacion.py (Dentro de la clase WarShipGame)
 
-# ... (Colócalo en la sección de métodos de utilidad/helper methods) ...
 
     def _update_button_style(self, button, state):
         """
@@ -1055,8 +1014,6 @@ class WarShipGame(QMainWindow):
 
     def restart_mm_game(self):
         """Reinicia el estado de la interfaz y el controlador para el modo MM (Máquina vs Máquina)."""
-        # Nota: El modo MM usualmente no tiene un botón 'Jugar de nuevo',
-        # pero es bueno tener la función por si acaso.
         self._reset_ui_state()
         self.start_mm_game()
         self.btn_pause_resume.setText("Iniciar IA") # Asegura que la IA esté detenida
@@ -1065,22 +1022,15 @@ class WarShipGame(QMainWindow):
         """Alterna entre la vista del tablero propio (T1) y el del oponente (T2).
         Solo se usa en los modos 'hv' (Humano vs Máquina) y 'mm' (Máquina vs Máquina)."""
         
-        # Debe estar en modos donde se usan dos tableros separados
         if self.mode not in ('hv', 'mm'):
             return
 
-        # 1. Determinar el ID del tablero que se debe mostrar
-        # Si actualmente ves T2, cambia a T1, y viceversa.
         new_board_id = 1 if self.current_visible_board == 2 else 2
         
-        # 2. Llamar a show_board para redibujar la vista
-        # Esto actualiza self.current_visible_board
         self.show_board(new_board_id) 
 
-        # 3. Obtener el modelo del nuevo tablero visible para actualizar las etiquetas/botones
         tablero_obj = self.controller.tablero1 if new_board_id == 1 else self.controller.tablero2
 
-        # 4. Actualizar las etiquetas de la interfaz
         if new_board_id == 1:
             self.opponent_label.setText("Tu Tablero (Defensa)")
             self.message_label.setText("Viendo tu tablero. Pulsa 'Alternar Vista' para volver a atacar.")
@@ -1091,10 +1041,8 @@ class WarShipGame(QMainWindow):
                 self.message_label.setText("Turno Humano: Dispara a la Máquina.")
             else:
                 self.message_label.setText("Viendo tablero enemigo.")
-        
-        # ----------------------------------------------------
-        # CORRECCIÓN CLAVE: Sincronizar el botón de Hints (Mostrar/Ocultar Barcos)
-        # ----------------------------------------------------
+
+        # Sincronizar el botón de Hints (Mostrar/Ocultar Barcos)
         if tablero_obj:
             # Sincronizar el texto del botón de hints con el estado del nuevo tablero
             is_shown = tablero_obj.are_hints_shown
@@ -1108,15 +1056,11 @@ class WarShipGame(QMainWindow):
         Retorna el botón de la cuadrícula en las coordenadas (row, col).
         Asume que todos los botones se encuentran en self.opponent_board_layout.
         """
-        # Nota: La lógica real es que board_id se usa para seleccionar el layout si hubiese dos, 
-        # pero como solo usas uno (opponent_board_layout), ignoramos board_id aquí.
         if self.opponent_board_layout:
             item = self.opponent_board_layout.itemAtPosition(row, col)
             if item:
                 return item.widget()
         return None
-
-# ... (Otros métodos de la clase WarShipGame) ...
 
 # ----------------------------
 # Entrypoint

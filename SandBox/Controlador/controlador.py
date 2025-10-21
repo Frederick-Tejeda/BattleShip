@@ -42,9 +42,7 @@ class WarShipController:
         # Nueva propiedad para resaltar casilla ganadora
         self.last_hit_win = None
 
-    # ----------------------
     # Inicialización de juegos
-    # ----------------------
     def start_new_game(self):
         self.mode = 'solo'
         self.game_model = Tablero(self.board_size)
@@ -92,9 +90,7 @@ class WarShipController:
         self.current_turn = 'P1'
         self.last_hit_win = None
 
-    # ----------------------
     # Disparos
-    # ----------------------
     def _fmt(self, message: str):
         return message.strip().replace('\n', ' ')
 
@@ -123,9 +119,7 @@ class WarShipController:
                  tablero.decrement_tries()
             return "miss", self._fmt("Agua.")
 
-    # ----------------------
     # IA Helpers
-    # ----------------------
     def ai_neighbors(self, row, col):
         """Genera celdas adyacentes válidas para la búsqueda de la IA."""
         neighbors = []
@@ -135,12 +129,14 @@ class WarShipController:
                 neighbors.append((r, c))
         return neighbors
 
+    # Se aplica Algoritmos Aleatorios
     def ai_random_hunt_cell_for(self, ai_state: AiState, use_parity=True):
         """Elige una celda aleatoria que no haya sido disparada, usando paridad si es necesario."""
         valid_cells = []
         for r in range(self.board_size):
             for c in range(self.board_size):
                 if (r, c) not in ai_state.ai_shots:
+                    # Se aplica Fuerza Bruta, ya que IA busca entre todas las celdas válidas hasta encontrar una que cumpla la condición indicada
                     if not use_parity or (r + c) % 2 == 0:
                         valid_cells.append((r, c))
         
@@ -159,6 +155,7 @@ class WarShipController:
         for r, c in self.ai_neighbors(row, col):
             if (r, c) not in ai_state.ai_shots and (r, c) not in ai_state.ai_targets:
                 ai_state.ai_targets.append((r, c))
+
 
     def ai_extend_line_from_hits_for(self, ai_state: AiState, row: int, col: int):
         """
@@ -248,7 +245,6 @@ class WarShipController:
             ai_state.ai_hits.append((row, col))
             ai_state.ai_current_hits.append((row, col))
             
-            # ERROR LINE: Aquí estaba la llamada a is_game_over_at_cell
             if tablero.is_game_over():
                 self.last_hit_win = (row, col)
                 # Si el juego ha terminado, forzamos el resultado a "win"
@@ -259,9 +255,7 @@ class WarShipController:
             ai_state.ai_current_hits = []
         return (row, col, result, message)
 
-    # ----------------------
     # Estado del juego
-    # ----------------------
     def is_game_finished(self):
         if self.mode == 'solo':
             return self.is_game_finished_on(self.game_model)
@@ -294,9 +288,7 @@ class WarShipController:
             
         return None
 
-    # ----------------------
     # Utilidades
-    # ----------------------
     def get_board_size(self):
         return self.board_size
 
@@ -338,7 +330,7 @@ class WarShipController:
         self.tablero2 = Tablero(self.board_size) # Tablero para Máquina B (atacado por A)
         
         # 2. Inicializar los estados de ambas IA
-        # Nota: Asumimos que T1 es 'Máquina A' y T2 es 'Máquina B'
+        # Asumimos que T1 es 'Máquina A' y T2 es 'Máquina B'
         self.ai_A = self.AiState(self.board_size) # Estado de la IA A (ataca T2)
         self.ai_B = self.AiState(self.board_size) # Estado de la IA B (ataca T1)
         
